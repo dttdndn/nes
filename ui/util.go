@@ -9,7 +9,6 @@ import (
 	"image/draw"
 	"image/gif"
 	"image/png"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/user"
@@ -116,7 +115,7 @@ func combineButtons(a, b [8]bool) [8]bool {
 }
 
 func hashFile(path string) (string, error) {
-	data, err := ioutil.ReadFile(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return "", err
 	}
@@ -144,7 +143,7 @@ func setTexture(im *image.RGBA) {
 
 func copyImage(src image.Image) *image.RGBA {
 	dst := image.NewRGBA(src.Bounds())
-	draw.Draw(dst, dst.Rect, src, image.ZP, draw.Src)
+	draw.Draw(dst, dst.Rect, src, image.Point{}, draw.Src)
 	return dst
 }
 
@@ -177,7 +176,7 @@ func saveGIF(path string, frames []image.Image) error {
 			continue
 		}
 		dst := image.NewPaletted(src.Bounds(), palette)
-		draw.Draw(dst, dst.Rect, src, image.ZP, draw.Src)
+		draw.Draw(dst, dst.Rect, src, image.Point{}, draw.Src)
 		g.Image = append(g.Image, dst)
 		g.Delay = append(g.Delay, 5)
 	}
@@ -191,9 +190,9 @@ func saveGIF(path string, frames []image.Image) error {
 
 func screenshot(im image.Image) {
 	for i := 0; i < 1000; i++ {
-		path := fmt.Sprintf("%03d.png", i)
-		if _, err := os.Stat(path); os.IsNotExist(err) {
-			savePNG(path, im)
+		p := fmt.Sprintf("%03d.png", i)
+		if _, err := os.Stat(p); os.IsNotExist(err) {
+			savePNG(p, im)
 			return
 		}
 	}
@@ -201,9 +200,9 @@ func screenshot(im image.Image) {
 
 func animation(frames []image.Image) {
 	for i := 0; i < 1000; i++ {
-		path := fmt.Sprintf("%03d.gif", i)
-		if _, err := os.Stat(path); os.IsNotExist(err) {
-			saveGIF(path, frames)
+		p := fmt.Sprintf("%03d.gif", i)
+		if _, err := os.Stat(p); os.IsNotExist(err) {
+			saveGIF(p, frames)
 			return
 		}
 	}

@@ -127,9 +127,9 @@ func (m *Mapper4) writeRegister(address uint16, value byte) {
 		m.writeIRQLatch(value)
 	case address <= 0xDFFF && address%2 == 1:
 		m.writeIRQReload(value)
-	case address <= 0xFFFF && address%2 == 0:
+	case address%2 == 0:
 		m.writeIRQDisable(value)
-	case address <= 0xFFFF && address%2 == 1:
+	case address%2 == 1:
 		m.writeIRQEnable(value)
 	}
 }
@@ -155,22 +155,22 @@ func (m *Mapper4) writeMirror(value byte) {
 	}
 }
 
-func (m *Mapper4) writeProtect(value byte) {
+func (m *Mapper4) writeProtect(_ byte) {
 }
 
 func (m *Mapper4) writeIRQLatch(value byte) {
 	m.reload = value
 }
 
-func (m *Mapper4) writeIRQReload(value byte) {
+func (m *Mapper4) writeIRQReload(_ byte) {
 	m.counter = 0
 }
 
-func (m *Mapper4) writeIRQDisable(value byte) {
+func (m *Mapper4) writeIRQDisable(_ byte) {
 	m.irqEnable = false
 }
 
-func (m *Mapper4) writeIRQEnable(value byte) {
+func (m *Mapper4) writeIRQEnable(_ byte) {
 	m.irqEnable = true
 }
 

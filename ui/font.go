@@ -32,8 +32,8 @@ func init() {
 
 func CreateGenericThumbnail(text string) image.Image {
 	im := image.NewRGBA(image.Rect(0, 0, 256, 240))
-	draw.Draw(im, im.Rect, &image.Uniform{color.Black}, image.ZP, draw.Src)
-	DrawCenteredText(im, text, 1, 2, color.RGBA{128, 128, 128, 255})
+	draw.Draw(im, im.Rect, &image.Uniform{C: color.Black}, image.Point{}, draw.Src)
+	DrawCenteredText(im, text, 1, 2, color.RGBA{R: 128, G: 128, B: 128, A: 255})
 	DrawCenteredText(im, text, 0, 0, color.White)
 	return im
 }
@@ -74,7 +74,7 @@ func DrawCharacter(dst draw.Image, x, y int, ch byte, c color.Color) {
 	cx := int((ch-32)%16) * 16
 	cy := int((ch-32)/16) * 16
 	r := image.Rect(x, y, x+16, y+16)
-	src := &image.Uniform{c}
+	src := &image.Uniform{C: c}
 	sp := image.Pt(cx, cy)
 	draw.DrawMask(dst, r, src, sp, fontMask, sp, draw.Over)
 }

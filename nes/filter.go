@@ -6,7 +6,7 @@ type Filter interface {
 	Step(x float32) float32
 }
 
-// First order filters are defined by the following parameters.
+// FirstOrderFilter are defined by the following parameters.
 // y[n] = B0*x[n] + B1*x[n-1] - A1*y[n-1]
 type FirstOrderFilter struct {
 	B0    float32
@@ -23,6 +23,7 @@ func (f *FirstOrderFilter) Step(x float32) float32 {
 	return y
 }
 
+// LowPassFilter
 // sampleRate: samples per second
 // cutoffFreq: oscillations per second
 func LowPassFilter(sampleRate float32, cutoffFreq float32) Filter {

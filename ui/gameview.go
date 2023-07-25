@@ -59,7 +59,7 @@ func (view *GameView) Exit() {
 	view.console.SaveState(savePath(view.hash))
 }
 
-func (view *GameView) Update(t, dt float64) {
+func (view *GameView) Update(_, dt float64) {
 	if dt > 1 {
 		dt = 0
 	}
@@ -85,8 +85,8 @@ func (view *GameView) Update(t, dt float64) {
 	}
 }
 
-func (view *GameView) onKey(window *glfw.Window,
-	key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
+func (view *GameView) onKey(_ *glfw.Window,
+	key glfw.Key, _ int, action glfw.Action, _ glfw.ModifierKey) {
 	if action == glfw.Press {
 		switch key {
 		case glfw.KeySpace:

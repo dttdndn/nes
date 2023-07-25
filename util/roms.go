@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path"
@@ -31,12 +30,12 @@ func main() {
 		log.Fatalln("Usage: go run util/roms.go roms_directory")
 	}
 	dir := args[0]
-	infos, err := ioutil.ReadDir(dir)
+	entries, err := os.ReadDir(dir)
 	if err != nil {
 		panic(err)
 	}
-	for _, info := range infos {
-		name := info.Name()
+	for _, entry := range entries {
+		name := entry.Name()
 		if !strings.HasSuffix(name, ".nes") {
 			continue
 		}

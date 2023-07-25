@@ -90,7 +90,7 @@ func (view *MenuView) onSelect() {
 	view.director.PlayGame(view.paths[index])
 }
 
-func (view *MenuView) onChar(window *glfw.Window, char rune) {
+func (view *MenuView) onChar(_ *glfw.Window, char rune) {
 	now := glfw.GetTime()
 	if now > view.typeTime {
 		view.typeBuffer = ""
@@ -123,7 +123,7 @@ func (view *MenuView) Exit() {
 	view.director.window.SetCharCallback(nil)
 }
 
-func (view *MenuView) Update(t, dt float64) {
+func (view *MenuView) Update(t, _ float64) {
 	view.checkButtons()
 	view.texture.Purge()
 	window := view.director.window
@@ -154,8 +154,7 @@ func (view *MenuView) Update(t, dt float64) {
 			if index >= len(view.paths) || index < 0 {
 				continue
 			}
-			path := view.paths[index]
-			tx, ty, tw, th := view.texture.Lookup(path)
+			tx, ty, tw, th := view.texture.Lookup(view.paths[index])
 			drawThumbnail(x, y, tx, ty, tw, th)
 		}
 	}

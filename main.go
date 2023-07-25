@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io/ioutil"
 	"log"
 	"os"
 	"path"
@@ -32,13 +31,13 @@ func getPaths() []string {
 		return nil
 	}
 	if info.IsDir() {
-		infos, err := ioutil.ReadDir(arg)
+		entries, err := os.ReadDir(arg)
 		if err != nil {
 			return nil
 		}
 		var result []string
-		for _, info := range infos {
-			name := info.Name()
+		for _, entry := range entries {
+			name := entry.Name()
 			if !strings.HasSuffix(name, ".nes") {
 				continue
 			}

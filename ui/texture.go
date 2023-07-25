@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"golang.org/x/text/language"
 	"image"
 	"io"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/go-gl/gl/v2.1/gl"
+	"golang.org/x/text/cases"
 )
 
 const textureSize = 4096
@@ -42,8 +44,8 @@ func NewTexture() *Texture {
 func (t *Texture) Purge() {
 	for {
 		select {
-		case path := <-t.ch:
-			delete(t.lookup, path)
+		case p := <-t.ch:
+			delete(t.lookup, p)
 		default:
 			return
 		}
@@ -111,7 +113,7 @@ func (t *Texture) loadThumbnail(romPath string) image.Image {
 	_, name := path.Split(romPath)
 	name = strings.TrimSuffix(name, ".nes")
 	name = strings.Replace(name, "_", " ", -1)
-	name = strings.Title(name)
+	name = cases.Title(language.AmericanEnglish).String(name)
 	im := CreateGenericThumbnail(name)
 	hash, err := hashFile(romPath)
 	if err != nil {

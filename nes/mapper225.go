@@ -57,8 +57,8 @@ func (m *Mapper225) Read(address uint16) byte {
 	return 0
 }
 
-func (m *Mapper225) Write(address uint16, value byte) {
-	if (address < 0x8000) {
+func (m *Mapper225) Write(address uint16, _ byte) {
+	if address < 0x8000 {
 		return
 	}
 
@@ -66,8 +66,8 @@ func (m *Mapper225) Write(address uint16, value byte) {
 	bank := (A >> 14) & 1
 	m.chrBank = (A & 0x3f) | (bank << 6)
 	prg := ((A >> 6) & 0x3f) | (bank << 6)
-	mode := (A >> 12) & 1;
-	if (mode == 1) {
+	mode := (A >> 12) & 1
+	if mode == 1 {
 		m.prgBank1 = prg
 		m.prgBank2 = prg
 	} else {
@@ -75,7 +75,7 @@ func (m *Mapper225) Write(address uint16, value byte) {
 		m.prgBank2 = prg + 1
 	}
 	mirr := (A >> 13) & 1
-	if (mirr == 1) {
+	if mirr == 1 {
 		m.Cartridge.Mirror = MirrorHorizontal
 	} else {
 		m.Cartridge.Mirror = MirrorVertical
