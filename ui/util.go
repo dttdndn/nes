@@ -17,7 +17,7 @@ import (
 
 	"github.com/fogleman/nes/nes"
 	"github.com/go-gl/gl/v2.1/gl"
-	"github.com/go-gl/glfw/v3.2/glfw"
+	"github.com/go-gl/glfw/v3.3/glfw"
 )
 
 var homeDir string
@@ -65,12 +65,12 @@ func readKeys(window *glfw.Window, turbo bool) [8]bool {
 
 func readJoystick(joy glfw.Joystick, turbo bool) [8]bool {
 	var result [8]bool
-	if !glfw.JoystickPresent(joy) {
+	if !glfw.Joystick.Present(joy) {
 		return result
 	}
-	joyname := glfw.GetJoystickName(joy)
-	axes := glfw.GetJoystickAxes(joy)
-	buttons := glfw.GetJoystickButtons(joy)
+	joyname := glfw.Joystick.GetName(joy)
+	axes := glfw.Joystick.GetAxes(joy)
+	buttons := glfw.Joystick.GetButtons(joy)
 	if joyname == "PLAYSTATION(R)3 Controller" {
 		result[nes.ButtonA] = buttons[14] == 1 || (turbo && buttons[2] == 1)
 		result[nes.ButtonB] = buttons[13] == 1 || (turbo && buttons[3] == 1)
@@ -97,10 +97,10 @@ func readJoystick(joy glfw.Joystick, turbo bool) [8]bool {
 }
 
 func joystickReset(joy glfw.Joystick) bool {
-	if !glfw.JoystickPresent(joy) {
+	if !glfw.Joystick.Present(joy) {
 		return false
 	}
-	buttons := glfw.GetJoystickButtons(joy)
+	buttons := glfw.Joystick.GetButtons(joy)
 	if len(buttons) < 6 {
 		return false
 	}
