@@ -2,6 +2,7 @@ package nes
 
 import (
 	"encoding/gob"
+	"fmt"
 	"image"
 	"image/color"
 	"os"
@@ -153,4 +154,78 @@ func (console *Console) Load(decoder *gob.Decoder) error {
 		return err
 	}
 	return nil
+}
+
+// FormatState return the current console/CPU state as a string
+func (console *Console) FormatState() string {
+	cpu, ppu := console.CPU, console.PPU
+	opcode := cpu.Read(cpu.PC)
+	size, name, mode := instructionSizes[opcode], instructionNames[opcode], instructionModes[opcode]
+	b0, b1, b2 := cpu.Read(cpu.PC+0), cpu.Read(cpu.PC+1), cpu.Read(cpu.PC+2)
+	w0, w1, w2 := fmt.Sprintf("%02X", b0), fmt.Sprintf("%02X", b1), fmt.Sprintf("%02X", b2)
+	if size < 2 {
+		w1 = "  "
+	}
+	if size < 3 {
+		w2 = "  "
+	}
+	var operand string
+	switch mode {
+	case modeAbsolute:
+		operand = fmt.Sprintf("$%02X%02X", b2, b1)
+	case modeAbsoluteX:
+		operand = fmt.Sprintf("$%02X%02X,X", b2, b1)
+	case modeAbsoluteY:
+		operand = fmt.Sprintf("$%02X%02X,Y", b2, b1)
+	case modeAccumulator:
+		operand = fmt.Sprintf("A")
+	case modeImmediate:
+		operand = fmt.Sprintf("#$%02X", b1)
+	case modeImplied:
+		// nothing
+	case modeIndirect:
+		operand = fmt.Sprintf("($%02x%02X)", b2, b1)
+	case modeIndexedIndirect:
+		operand = fmt.Sprintf("($%02X,X)", b1)
+	case modeIndirectIndexed:
+		operand = fmt.Sprintf("($%02X),Y", b1)
+	case modeRelative:
+		operand = fmt.Sprintf("$%04X", uint16(int(cpu.PC)+int(int8(b1))+int(size)))
+	case modeZeroPage:
+		operand = fmt.Sprintf("$%02X", b1)
+	case modeZeroPageX:
+		operand = fmt.Sprintf("$%02X,X", b1)
+	case modeZeroPageY:
+		operand = fmt.Sprintf("$%02X,Y", b1)
+	}
+	misc := ""
+	io := instructionIO[opcode]
+	if io != 0 {
+		address := cpu.computeStepInfoAddress(cpu.PC, mode)
+		switch mode {
+		case modeZeroPageX:
+			misc = fmt.Sprintf(" @ %02X = %02X", address, cpu.Read(address))
+		case modeZeroPageY:
+			misc = fmt.Sprintf(" @ %02X = %02X", address, cpu.Read(address))
+		case modeAbsoluteX:
+			misc = fmt.Sprintf(" @ %04X = %02X", address, cpu.Read(address))
+		case modeAbsoluteY:
+			misc = fmt.Sprintf(" @ %04X = %02X", address, cpu.Read(address))
+		case modeIndexedIndirect:
+			misc = fmt.Sprintf(" @ %02X = %04X = %02X", b1+cpu.X, address, cpu.Read(address))
+		case modeIndirect:
+			misc = fmt.Sprintf(" = %04X", address)
+		case modeIndirectIndexed:
+			indexedAddress := uint16(cpu.Read(uint16(b1+1)))<<8 | uint16(cpu.Read(uint16(b1)))
+			misc = fmt.Sprintf(" = %04X @ %04X = %02X", indexedAddress, address, cpu.Read(address))
+		default:
+			misc = fmt.Sprintf(" = %02X", cpu.Read(address))
+		}
+	}
+
+	return fmt.Sprintf(
+		"%04X  %s %s %s %4s %-28s"+
+			"A:%02X X:%02X Y:%02X P:%02X SP:%02X PPU:%3d,%3d CYC:%d",
+		cpu.PC, w0, w1, w2, name, operand+misc,
+		cpu.A, cpu.X, cpu.Y, cpu.Flags(), cpu.SP, ppu.ScanLine, ppu.Cycle, cpu.Cycles)
 }

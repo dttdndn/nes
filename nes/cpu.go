@@ -2,7 +2,6 @@ package nes
 
 import (
 	"encoding/gob"
-	"fmt"
 )
 
 const CPUFrequency = 1789773
@@ -55,22 +54,22 @@ var instructionModes = [256]byte{
 
 // instructionSizes indicates the size of each instruction in bytes
 var instructionSizes = [256]byte{
-	2, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
-	2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
-	3, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
-	2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
-	1, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
-	2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
-	1, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
-	2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
-	2, 2, 0, 0, 2, 2, 2, 0, 1, 0, 1, 0, 3, 3, 3, 0,
-	2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 0, 3, 0, 0,
-	2, 2, 2, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
-	2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
-	2, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
-	2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
-	2, 2, 0, 0, 2, 2, 2, 0, 1, 2, 1, 0, 3, 3, 3, 0,
-	2, 2, 0, 0, 2, 2, 2, 0, 1, 3, 1, 0, 3, 3, 3, 0,
+	2, 2, 0, 2, 2, 2, 2, 2, 1, 2, 1, 0, 3, 3, 3, 3,
+	2, 2, 0, 2, 2, 2, 2, 2, 1, 3, 1, 3, 3, 3, 3, 3,
+	3, 2, 0, 2, 2, 2, 2, 2, 1, 2, 1, 0, 3, 3, 3, 3,
+	2, 2, 0, 2, 2, 2, 2, 2, 1, 3, 1, 3, 3, 3, 3, 3,
+	1, 2, 0, 2, 2, 2, 2, 2, 1, 2, 1, 0, 3, 3, 3, 3,
+	2, 2, 0, 2, 2, 2, 2, 2, 1, 3, 1, 3, 3, 3, 3, 3,
+	1, 2, 0, 2, 2, 2, 2, 2, 1, 2, 1, 0, 3, 3, 3, 3,
+	2, 2, 0, 2, 2, 2, 2, 2, 1, 3, 1, 3, 3, 3, 3, 3,
+	2, 2, 0, 2, 2, 2, 2, 2, 1, 0, 1, 0, 3, 3, 3, 3,
+	2, 2, 0, 0, 2, 2, 2, 2, 1, 3, 1, 0, 0, 3, 0, 0,
+	2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 1, 0, 3, 3, 3, 3,
+	2, 2, 0, 2, 2, 2, 2, 2, 1, 3, 1, 0, 3, 3, 3, 3,
+	2, 2, 0, 2, 2, 2, 2, 2, 1, 2, 1, 0, 3, 3, 3, 3,
+	2, 2, 0, 2, 2, 2, 2, 2, 1, 3, 1, 3, 3, 3, 3, 3,
+	2, 2, 0, 2, 2, 2, 2, 2, 1, 2, 1, 2, 3, 3, 3, 3,
+	2, 2, 0, 2, 2, 2, 2, 2, 1, 3, 1, 3, 3, 3, 3, 3,
 }
 
 // instructionCycles indicates the number of cycles used by each instruction,
@@ -115,40 +114,51 @@ var instructionPageCycles = [256]byte{
 	1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0,
 }
 
+// instruction IO
+const (
+	_ = iota
+	ioRead
+	ioWrite
+)
+
+// instructionIO indicates the IO direction(R/W) of an instruction if any
+var instructionIO = [256]byte{
+	0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1,
+	0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1,
+	0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1,
+	0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1,
+	0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1,
+	0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1,
+	0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1,
+	0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1,
+	0, 2, 0, 1, 2, 2, 2, 1, 0, 0, 0, 0, 2, 2, 2, 1,
+	0, 2, 0, 0, 2, 2, 2, 1, 0, 2, 0, 0, 0, 2, 0, 0,
+	0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1,
+	0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1,
+	0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1,
+	0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1,
+	0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1,
+	0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1,
+}
+
 // instructionNames indicates the name of each instruction
 var instructionNames = [256]string{
-	"BRK", "ORA", "KIL", "SLO", "NOP", "ORA", "ASL", "SLO",
-	"PHP", "ORA", "ASL", "ANC", "NOP", "ORA", "ASL", "SLO",
-	"BPL", "ORA", "KIL", "SLO", "NOP", "ORA", "ASL", "SLO",
-	"CLC", "ORA", "NOP", "SLO", "NOP", "ORA", "ASL", "SLO",
-	"JSR", "AND", "KIL", "RLA", "BIT", "AND", "ROL", "RLA",
-	"PLP", "AND", "ROL", "ANC", "BIT", "AND", "ROL", "RLA",
-	"BMI", "AND", "KIL", "RLA", "NOP", "AND", "ROL", "RLA",
-	"SEC", "AND", "NOP", "RLA", "NOP", "AND", "ROL", "RLA",
-	"RTI", "EOR", "KIL", "SRE", "NOP", "EOR", "LSR", "SRE",
-	"PHA", "EOR", "LSR", "ALR", "JMP", "EOR", "LSR", "SRE",
-	"BVC", "EOR", "KIL", "SRE", "NOP", "EOR", "LSR", "SRE",
-	"CLI", "EOR", "NOP", "SRE", "NOP", "EOR", "LSR", "SRE",
-	"RTS", "ADC", "KIL", "RRA", "NOP", "ADC", "ROR", "RRA",
-	"PLA", "ADC", "ROR", "ARR", "JMP", "ADC", "ROR", "RRA",
-	"BVS", "ADC", "KIL", "RRA", "NOP", "ADC", "ROR", "RRA",
-	"SEI", "ADC", "NOP", "RRA", "NOP", "ADC", "ROR", "RRA",
-	"NOP", "STA", "NOP", "SAX", "STY", "STA", "STX", "SAX",
-	"DEY", "NOP", "TXA", "XAA", "STY", "STA", "STX", "SAX",
-	"BCC", "STA", "KIL", "AHX", "STY", "STA", "STX", "SAX",
-	"TYA", "STA", "TXS", "TAS", "SHY", "STA", "SHX", "AHX",
-	"LDY", "LDA", "LDX", "LAX", "LDY", "LDA", "LDX", "LAX",
-	"TAY", "LDA", "TAX", "LAX", "LDY", "LDA", "LDX", "LAX",
-	"BCS", "LDA", "KIL", "LAX", "LDY", "LDA", "LDX", "LAX",
-	"CLV", "LDA", "TSX", "LAS", "LDY", "LDA", "LDX", "LAX",
-	"CPY", "CMP", "NOP", "DCP", "CPY", "CMP", "DEC", "DCP",
-	"INY", "CMP", "DEX", "AXS", "CPY", "CMP", "DEC", "DCP",
-	"BNE", "CMP", "KIL", "DCP", "NOP", "CMP", "DEC", "DCP",
-	"CLD", "CMP", "NOP", "DCP", "NOP", "CMP", "DEC", "DCP",
-	"CPX", "SBC", "NOP", "ISC", "CPX", "SBC", "INC", "ISC",
-	"INX", "SBC", "NOP", "SBC", "CPX", "SBC", "INC", "ISC",
-	"BEQ", "SBC", "KIL", "ISC", "NOP", "SBC", "INC", "ISC",
-	"SED", "SBC", "NOP", "ISC", "NOP", "SBC", "INC", "ISC",
+	"BRK", "ORA", "KIL", "*SLO", "*NOP", "ORA", "ASL", "*SLO", "PHP", "ORA", "ASL", "ANC", "*NOP", "ORA", "ASL", "*SLO",
+	"BPL", "ORA", "KIL", "*SLO", "*NOP", "ORA", "ASL", "*SLO", "CLC", "ORA", "*NOP", "*SLO", "*NOP", "ORA", "ASL", "*SLO",
+	"JSR", "AND", "KIL", "*RLA", "BIT", "AND", "ROL", "*RLA", "PLP", "AND", "ROL", "ANC", "BIT", "AND", "ROL", "*RLA",
+	"BMI", "AND", "KIL", "*RLA", "*NOP", "AND", "ROL", "*RLA", "SEC", "AND", "*NOP", "*RLA", "*NOP", "AND", "ROL", "*RLA",
+	"RTI", "EOR", "KIL", "*SRE", "*NOP", "EOR", "LSR", "*SRE", "PHA", "EOR", "LSR", "ALR", "JMP", "EOR", "LSR", "*SRE",
+	"BVC", "EOR", "KIL", "*SRE", "*NOP", "EOR", "LSR", "*SRE", "CLI", "EOR", "*NOP", "*SRE", "*NOP", "EOR", "LSR", "*SRE",
+	"RTS", "ADC", "KIL", "*RRA", "*NOP", "ADC", "ROR", "*RRA", "PLA", "ADC", "ROR", "ARR", "JMP", "ADC", "ROR", "*RRA",
+	"BVS", "ADC", "KIL", "*RRA", "*NOP", "ADC", "ROR", "*RRA", "SEI", "ADC", "*NOP", "*RRA", "*NOP", "ADC", "ROR", "*RRA",
+	"*NOP", "STA", "NOP", "*SAX", "STY", "STA", "STX", "*SAX", "DEY", "NOP", "TXA", "XAA", "STY", "STA", "STX", "*SAX",
+	"BCC", "STA", "KIL", "AHX", "STY", "STA", "STX", "*SAX", "TYA", "STA", "TXS", "TAS", "SHY", "STA", "SHX", "AHX",
+	"LDY", "LDA", "LDX", "*LAX", "LDY", "LDA", "LDX", "*LAX", "TAY", "LDA", "TAX", "LAX", "LDY", "LDA", "LDX", "*LAX",
+	"BCS", "LDA", "KIL", "*LAX", "LDY", "LDA", "LDX", "*LAX", "CLV", "LDA", "TSX", "LAS", "LDY", "LDA", "LDX", "*LAX",
+	"CPY", "CMP", "NOP", "*DCP", "CPY", "CMP", "DEC", "*DCP", "INY", "CMP", "DEX", "AXS", "CPY", "CMP", "DEC", "*DCP",
+	"BNE", "CMP", "KIL", "*DCP", "*NOP", "CMP", "DEC", "*DCP", "CLD", "CMP", "*NOP", "*DCP", "*NOP", "CMP", "DEC", "*DCP",
+	"CPX", "SBC", "NOP", "*ISB", "CPX", "SBC", "INC", "*ISB", "INX", "SBC", "NOP", "*SBC", "CPX", "SBC", "INC", "*ISB",
+	"BEQ", "SBC", "KIL", "*ISB", "*NOP", "SBC", "INC", "*ISB", "SED", "SBC", "*NOP", "*ISB", "*NOP", "SBC", "INC", "*ISB",
 }
 
 type CPU struct {
@@ -210,10 +220,10 @@ func (c *CPU) createTable() {
 		c.iny, c.cmp, c.dex, c.axs, c.cpy, c.cmp, c.dec, c.dcp,
 		c.bne, c.cmp, c.kil, c.dcp, c.nop, c.cmp, c.dec, c.dcp,
 		c.cld, c.cmp, c.nop, c.dcp, c.nop, c.cmp, c.dec, c.dcp,
-		c.cpx, c.sbc, c.nop, c.isc, c.cpx, c.sbc, c.inc, c.isc,
-		c.inx, c.sbc, c.nop, c.sbc, c.cpx, c.sbc, c.inc, c.isc,
-		c.beq, c.sbc, c.kil, c.isc, c.nop, c.sbc, c.inc, c.isc,
-		c.sed, c.sbc, c.nop, c.isc, c.nop, c.sbc, c.inc, c.isc,
+		c.cpx, c.sbc, c.nop, c.isb, c.cpx, c.sbc, c.inc, c.isb,
+		c.inx, c.sbc, c.nop, c.sbc, c.cpx, c.sbc, c.inc, c.isb,
+		c.beq, c.sbc, c.kil, c.isb, c.nop, c.sbc, c.inc, c.isb,
+		c.sed, c.sbc, c.nop, c.isb, c.nop, c.sbc, c.inc, c.isb,
 	}
 }
 
@@ -262,27 +272,6 @@ func (cpu *CPU) Reset() {
 	cpu.PC = cpu.Read16(0xFFFC)
 	cpu.SP = 0xFD
 	cpu.SetFlags(0x24)
-}
-
-// PrintInstruction prints the current CPU state
-func (cpu *CPU) PrintInstruction() {
-	opcode := cpu.Read(cpu.PC)
-	bytes := instructionSizes[opcode]
-	name := instructionNames[opcode]
-	w0 := fmt.Sprintf("%02X", cpu.Read(cpu.PC+0))
-	w1 := fmt.Sprintf("%02X", cpu.Read(cpu.PC+1))
-	w2 := fmt.Sprintf("%02X", cpu.Read(cpu.PC+2))
-	if bytes < 2 {
-		w1 = "  "
-	}
-	if bytes < 3 {
-		w2 = "  "
-	}
-	fmt.Printf(
-		"%4X  %s %s %s  %s %28s"+
-			"A:%02X X:%02X Y:%02X P:%02X SP:%02X CYC:%3d\n",
-		cpu.PC, w0, w1, w2, name, "",
-		cpu.A, cpu.X, cpu.Y, cpu.Flags(), cpu.SP, (cpu.Cycles*3)%341)
 }
 
 // pagesDiffer returns true if the two addresses reference different pages
@@ -441,54 +430,73 @@ func (cpu *CPU) Step() int {
 	opcode := cpu.Read(cpu.PC)
 	mode := instructionModes[opcode]
 
-	var address uint16
-	var pageCrossed bool
-	switch mode {
-	case modeAbsolute:
-		address = cpu.Read16(cpu.PC + 1)
-	case modeAbsoluteX:
-		address = cpu.Read16(cpu.PC+1) + uint16(cpu.X)
-		pageCrossed = pagesDiffer(address-uint16(cpu.X), address)
-	case modeAbsoluteY:
-		address = cpu.Read16(cpu.PC+1) + uint16(cpu.Y)
-		pageCrossed = pagesDiffer(address-uint16(cpu.Y), address)
-	case modeAccumulator:
-		address = 0
-	case modeImmediate:
-		address = cpu.PC + 1
-	case modeImplied:
-		address = 0
-	case modeIndexedIndirect:
-		address = cpu.read16bug(uint16(cpu.Read(cpu.PC+1) + cpu.X))
-	case modeIndirect:
-		address = cpu.read16bug(cpu.Read16(cpu.PC + 1))
-	case modeIndirectIndexed:
-		address = cpu.read16bug(uint16(cpu.Read(cpu.PC+1))) + uint16(cpu.Y)
-		pageCrossed = pagesDiffer(address-uint16(cpu.Y), address)
-	case modeRelative:
-		offset := uint16(cpu.Read(cpu.PC + 1))
-		if offset < 0x80 {
-			address = cpu.PC + 2 + offset
-		} else {
-			address = cpu.PC + 2 + offset - 0x100
-		}
-	case modeZeroPage:
-		address = uint16(cpu.Read(cpu.PC + 1))
-	case modeZeroPageX:
-		address = uint16(cpu.Read(cpu.PC+1)+cpu.X) & 0xff
-	case modeZeroPageY:
-		address = uint16(cpu.Read(cpu.PC+1)+cpu.Y) & 0xff
-	}
+	address := cpu.computeStepInfoAddress(cpu.PC, mode)
+	pageCrossed := cpu.computeStepInfoPageCrossed(address, mode)
 
 	cpu.PC += uint16(instructionSizes[opcode])
 	cpu.Cycles += uint64(instructionCycles[opcode])
 	if pageCrossed {
 		cpu.Cycles += uint64(instructionPageCycles[opcode])
 	}
-	info := &stepInfo{address, cpu.PC, mode}
+	info := &stepInfo{
+		address: address,
+		pc:      cpu.PC,
+		mode:    mode,
+	}
 	cpu.table[opcode](info)
 
 	return int(cpu.Cycles - cycles)
+}
+
+func (cpu *CPU) computeStepInfoAddress(pc uint16, mode byte) uint16 {
+	switch mode {
+	case modeAbsolute:
+		return cpu.Read16(pc + 1)
+	case modeAbsoluteX:
+		return cpu.Read16(pc+1) + uint16(cpu.X)
+	case modeAbsoluteY:
+		return cpu.Read16(pc+1) + uint16(cpu.Y)
+	case modeAccumulator:
+		return 0
+	case modeImmediate:
+		return pc + 1
+	case modeImplied:
+		return 0
+	case modeIndexedIndirect:
+		return cpu.read16bug(uint16(cpu.Read(pc+1) + cpu.X))
+	case modeIndirect:
+		return cpu.read16bug(cpu.Read16(pc + 1))
+	case modeIndirectIndexed:
+		return cpu.read16bug(uint16(cpu.Read(pc+1))) + uint16(cpu.Y)
+	case modeRelative:
+		offset := uint16(cpu.Read(pc + 1))
+		if offset < 0x80 {
+			return pc + 2 + offset
+		} else {
+			return pc + 2 + offset - 0x100
+		}
+	case modeZeroPage:
+		return uint16(cpu.Read(pc + 1))
+	case modeZeroPageX:
+		return uint16(cpu.Read(pc+1)+cpu.X) & 0xff
+	case modeZeroPageY:
+		return uint16(cpu.Read(pc+1)+cpu.Y) & 0xff
+	default:
+		return 0
+	}
+}
+
+func (cpu *CPU) computeStepInfoPageCrossed(address uint16, mode byte) bool {
+	switch mode {
+	case modeAbsoluteX:
+		return pagesDiffer(address-uint16(cpu.X), address)
+	case modeAbsoluteY:
+		return pagesDiffer(address-uint16(cpu.Y), address)
+	case modeIndirectIndexed:
+		return pagesDiffer(address-uint16(cpu.Y), address)
+	default:
+		return false
+	}
 }
 
 // NMI - Non-Maskable Interrupt
@@ -917,59 +925,74 @@ func (cpu *CPU) tya(info *stepInfo) {
 
 // illegal opcodes below
 
-func (cpu *CPU) ahx(info *stepInfo) {
+func (cpu *CPU) ahx(*stepInfo) {
 }
 
-func (cpu *CPU) alr(info *stepInfo) {
+func (cpu *CPU) alr(*stepInfo) {
 }
 
-func (cpu *CPU) anc(info *stepInfo) {
+func (cpu *CPU) anc(*stepInfo) {
 }
 
-func (cpu *CPU) arr(info *stepInfo) {
+func (cpu *CPU) arr(*stepInfo) {
 }
 
-func (cpu *CPU) axs(info *stepInfo) {
+func (cpu *CPU) axs(*stepInfo) {
 }
 
 func (cpu *CPU) dcp(info *stepInfo) {
+	cpu.dec(info)
+	cpu.cmp(info)
 }
 
-func (cpu *CPU) isc(info *stepInfo) {
+func (cpu *CPU) isb(info *stepInfo) {
+	cpu.inc(info)
+	cpu.sbc(info)
 }
 
-func (cpu *CPU) kil(info *stepInfo) {
+func (cpu *CPU) kil(*stepInfo) {
 }
 
-func (cpu *CPU) las(info *stepInfo) {
+func (cpu *CPU) las(*stepInfo) {
 }
 
 func (cpu *CPU) lax(info *stepInfo) {
+	cpu.lda(info)
+	cpu.tax(info)
 }
 
 func (cpu *CPU) rla(info *stepInfo) {
+	cpu.rol(info)
+	cpu.and(info)
 }
 
 func (cpu *CPU) rra(info *stepInfo) {
+	cpu.ror(info)
+	cpu.adc(info)
 }
 
 func (cpu *CPU) sax(info *stepInfo) {
+	cpu.Write(info.address, cpu.A&cpu.X)
 }
 
-func (cpu *CPU) shx(info *stepInfo) {
+func (cpu *CPU) shx(*stepInfo) {
 }
 
-func (cpu *CPU) shy(info *stepInfo) {
+func (cpu *CPU) shy(*stepInfo) {
 }
 
 func (cpu *CPU) slo(info *stepInfo) {
+	cpu.asl(info)
+	cpu.ora(info)
 }
 
 func (cpu *CPU) sre(info *stepInfo) {
+	cpu.lsr(info)
+	cpu.eor(info)
 }
 
-func (cpu *CPU) tas(info *stepInfo) {
+func (cpu *CPU) tas(*stepInfo) {
 }
 
-func (cpu *CPU) xaa(info *stepInfo) {
+func (cpu *CPU) xaa(*stepInfo) {
 }
